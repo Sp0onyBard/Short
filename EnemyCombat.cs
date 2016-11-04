@@ -3,6 +3,8 @@ using System.Collections;
 using PixelCrushers.DialogueSystem;
 using PixelCrushers.DialogueSystem.Examples;
 
+/*Simple script for enemy combat. If the player is in the
+line of sight, start shooting. Otherwise, do nothing.*/
 public class EnemyCombat : MonoBehaviour {
 
     private RaycastHit hit;
@@ -27,7 +29,7 @@ public class EnemyCombat : MonoBehaviour {
     public bool isStationary;
     public Material FreezeColor;
 
-
+    /*Get components for use in other methods*/
     void Start()
     {
         afc = GetComponent<AlwaysFaceCamera>();
@@ -37,6 +39,8 @@ public class EnemyCombat : MonoBehaviour {
         origin.y = origin.y + 1;
     }
 
+    /*Move origin. Actual movement of position is done in 
+    another script*/
     void Update()
     { 
         origin = transform.position;
@@ -45,22 +49,26 @@ public class EnemyCombat : MonoBehaviour {
 
     // Update is called once per frame
     void FixedUpdate()
-    {
+    {   /*Is the player in sight?*/
         if (Physics.Raycast(origin, transform.forward, out hit, maxdist))
-        {
+        {   /*Stop moving*/
             if (en != null)
             {
                 en.enabled = false;
             }
+            /*Save facing angle for when we return to movement*/
             origRot = transform.rotation;
+            /*Are we already shooting? If not...*/
             if (!firing)
             {
-                Debug.Log(hit.collider.gameObject);
+                /*Start shooting*/
                 StartCoroutine(Shoot());
 
             }
         }
         else {
+            /*Some enemies are stationary, and thus don't need to return to 
+            movement once the player leaves sight*/
             if (!isStationary)
             {
                 en.enabled = true;
@@ -69,7 +77,7 @@ public class EnemyCombat : MonoBehaviour {
     }
 
         
-
+    /*Shooting coroutine to start*/
     IEnumerator Shoot()
     {
        an.CrossFade(shoot.name);
@@ -82,11 +90,13 @@ public class EnemyCombat : MonoBehaviour {
        firing = false;
     }
 
-
+    /*When the player lands a shot...*/
     void OnParticleCollision(GameObject other)
-    {
+    {   /*Stop movement and change color.*/
         an.Stop();
         ChangeColors();
+        /*Some enemies have a face camera script to that they always
+        face the player. If this is true, set it as inactive*/
         if (afc != null)
         {
             afc.enabled = false;
@@ -96,12 +106,16 @@ public class EnemyCombat : MonoBehaviour {
             en.enabled = false;
         }
         enabled = false;
+        /*THis would be moved elsewhere had the game been larger, but for the scope of 
+        the research, was left in. A quest required the freezing of a single enemy,
+        and would trigger another event once this was accomplished*/
         if (QuestLog.GetQuestState("Clear The Guard") == QuestState.Active)
         {
             DialogueLua.SetVariable("EnemyFrozen", true);
         }
     }
 
+    /*Change visuals of model*/
     void ChangeColors()
     {
         GameObject head;
